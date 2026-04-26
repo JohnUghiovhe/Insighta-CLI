@@ -10,6 +10,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
+    "lint": "tsc --noEmit",
     "prepare": "npm run build",
     "test": "echo \"No tests configured\""
   },

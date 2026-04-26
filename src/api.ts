@@ -16,6 +16,11 @@ interface LoginCallbackResponse extends RefreshResponse {
   data: User;
 }
 
+interface MeResponse {
+  status: "success";
+  data: User;
+}
+
 const API_VERSION = "1";
 
 const expiryDateFromNow = (seconds: number): string => new Date(Date.now() + seconds * 1000).toISOString();
@@ -78,6 +83,19 @@ export class InsightaApi {
       throw new Error("You are not logged in. Run: insighta login");
     }
     return this.credentials.user;
+  }
+
+  async fetchWhoAmI(): Promise<User> {
+    const response = await this.authedRequest<MeResponse>({ method: "GET", url: "/auth/me" });
+    if (!this.credentials) {
+      throw new Error("You are not logged in. Run: insighta login");
+    }
+    this.credentials = {
+      ...this.credentials,
+      user: response.data
+    };
+    await saveCredentials(this.credentials);
+    return response.data;
   }
 
   private async refreshIfNeeded(): Promise<void> {

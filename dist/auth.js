@@ -54,6 +54,7 @@ const runLoginFlow = async ({ baseUrl, callbackPort }) => {
         authorizeUrl.searchParams.set("state", state);
         authorizeUrl.searchParams.set("code_challenge", codeChallenge);
         authorizeUrl.searchParams.set("code_challenge_method", "S256");
+        console.log(`OAuth callback URL: ${callbackUrl}`);
         await (0, open_1.default)(authorizeUrl.toString());
         const callbackPayload = await codeAndStatePromise;
         if (callbackPayload.state !== state) {
