@@ -15,12 +15,15 @@ const runLoginFlow = async ({ baseUrl, callbackPort }) => {
     const state = randomToken();
     const codeVerifier = randomToken();
     const codeChallenge = sha256Base64Url(codeVerifier);
-    const callbackUrl = `http://127.0.0.1:${callbackPort}/callback`;
+    const callbackHost = process.env.INSIGHTA_CALLBACK_HOST?.trim() || "localhost";
+    const callbackPath = process.env.INSIGHTA_CALLBACK_PATH?.trim() || "/callback";
+    const normalizedCallbackPath = callbackPath.startsWith("/") ? callbackPath : `/${callbackPath}`;
+    const callbackUrl = `http://${callbackHost}:${callbackPort}${normalizedCallbackPath}`;
     return (0, ui_1.withSpinner)("Starting OAuth login flow...", async () => {
         const codeAndStatePromise = new Promise((resolve, reject) => {
             const server = (0, node_http_1.createServer)((req, res) => {
                 const url = new URL(req.url ?? "/", callbackUrl);
-                if (url.pathname !== "/callback") {
+                if (url.pathname !== normalizedCallbackPath) {
                     res.writeHead(404).end("Not found");
                     return;
                 }
@@ -37,7 +40,7 @@ const runLoginFlow = async ({ baseUrl, callbackPort }) => {
                 resolve({ code: returnedCode, state: returnedState });
                 server.close();
             });
-            server.listen(callbackPort, "127.0.0.1");
+            server.listen(callbackPort, callbackHost);
             setTimeout(() => {
                 reject(new Error("Login timeout. Please try again."));
                 server.close();
