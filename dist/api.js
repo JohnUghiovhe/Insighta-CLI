@@ -62,6 +62,18 @@ class InsightaApi {
         }
         return this.credentials.user;
     }
+    async fetchWhoAmI() {
+        const response = await this.authedRequest({ method: "GET", url: "/auth/me" });
+        if (!this.credentials) {
+            throw new Error("You are not logged in. Run: insighta login");
+        }
+        this.credentials = {
+            ...this.credentials,
+            user: response.data
+        };
+        await (0, storage_1.saveCredentials)(this.credentials);
+        return response.data;
+    }
     async refreshIfNeeded() {
         if (!this.credentials) {
             throw new Error("You are not logged in. Run: insighta login");

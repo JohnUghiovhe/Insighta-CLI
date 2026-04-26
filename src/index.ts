@@ -67,7 +67,7 @@ program
   .action(() =>
     run(async () => {
       await api.loadCredentials();
-      const user = api.getWhoAmI();
+      const user = await withSpinner("Fetching current user...", async () => api.fetchWhoAmI());
       printUser(user);
     })
   );

@@ -57,7 +57,7 @@ program
     .description("Show current authenticated user")
     .action(() => run(async () => {
     await api.loadCredentials();
-    const user = api.getWhoAmI();
+    const user = await (0, ui_1.withSpinner)("Fetching current user...", async () => api.fetchWhoAmI());
     (0, ui_1.printUser)(user);
 }));
 const profiles = program.command("profiles").description("Profile operations");
