@@ -1,0 +1,35 @@
+{
+  "name": "insighta-cli",
+  "version": "1.0.0",
+  "description": "Insighta Labs CLI",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "bin": {
+    "insighta": "./bin/insighta.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "prepare": "npm run build",
+    "test": "echo \"No tests configured\""
+  },
+  "keywords": [
+    "cli",
+    "insighta"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.13.1",
+    "commander": "^14.0.1",
+    "dotenv": "^17.2.3",
+    "open": "^10.2.0",
+    "ora": "^9.0.0",
+    "table": "^6.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
