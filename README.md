@@ -2,6 +2,14 @@
 
 `insighta` is a globally installable command-line client for the Insighta+ backend APIs.
 
+## Reviewer Quick Run
+
+```bash
+insighta login
+insighta whoami
+insighta profiles list --limit 3
+```
+
 ## System Architecture
 
 - **Runtime entrypoint**: `bin/insighta.js` loads `dist/index.js`.
