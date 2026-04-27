@@ -1,7 +1,6 @@
 import { createServer } from "node:http";
 import crypto from "node:crypto";
 import axios from "axios";
-import open from "open";
 import { withSpinner } from "./ui";
 
 interface LoginFlowOptions {
@@ -83,6 +82,7 @@ export const runLoginFlow = async ({ baseUrl, callbackPort }: LoginFlowOptions):
     authorizeUrl.searchParams.set("code_challenge_method", "S256");
 
     console.log(`OAuth callback URL: ${callbackUrl}`);
+    const { default: open } = await import("open");
     await open(authorizeUrl.toString());
 
     const callbackPayload = await codeAndStatePromise;
