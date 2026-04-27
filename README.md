@@ -1,8 +1,48 @@
 # Insighta CLI
 
-`insighta` is a globally installable command-line client for the Insighta+ backend APIs.
+insighta is a globally installable command-line client for the Insighta+ backend APIs.
 
-## Reviewer Quick Run
+## Project Links
+
+Use this table to jump across the full docs for each Insighta project.
+
+| Project | Purpose | Docs |
+| --- | --- | --- |
+| Insighta CLI (this repo) | Terminal client for auth, profile search, export, and admin actions | [CLI README](https://github.com/JohnUghiovhe/Insighta-CLI#readme) |
+| Insighta+ Labs Backend | API, auth, RBAC, natural-language parser, profile intelligence | [Backend README](https://github.com/JohnUghiovhe/insighta-backend#readme) |
+| Insighta Web Frontend | Browser UI for auth and profile intelligence workflows | [Frontend README](https://github.com/JohnUghiovhe/insighta-web#readme) |
+
+## Live URLs
+
+| Surface | URL | Status |
+| --- | --- | --- |
+| Frontend | Pending deployment URL | To be updated |
+| Backend Base | https://intelligence-query-engine-production.up.railway.app/ | Live |
+| Backend Health | https://intelligence-query-engine-production.up.railway.app/health | Live |
+
+## What Was Updated
+
+The CLI behavior documented here now matches the current implementation:
+
+- OAuth for CLI is the init and exchange flow (`GET /auth/github/init`, then `POST /auth/github/exchange`).
+- `whoami` calls backend `GET /auth/me` and refreshes locally stored user metadata.
+- Natural-language search docs now include parser behavior and concrete query examples.
+- Cross-repo documentation links are now included, with a frontend placeholder for upcoming work.
+
+## System Architecture
+
+| Component | File | Responsibility |
+| --- | --- | --- |
+| Runtime entrypoint | `bin/insighta.js` | Boots compiled CLI runtime from `dist/index.js` |
+| Command layer | `src/index.ts` | Registers CLI commands/options using commander |
+| OAuth login client | `src/auth.ts` | PKCE generation, browser open, local callback listener |
+| API client | `src/api.ts` | Authenticated requests, token refresh, export download |
+| Credentials storage | `src/storage.ts` | Reads/writes local credentials file |
+| Terminal UI | `src/ui.ts` | Spinner/status output and table rendering |
+
+## CLI Usage
+
+## Quick Run
 
 ```bash
 insighta login
@@ -10,31 +50,7 @@ insighta whoami
 insighta profiles list --limit 3
 ```
 
-## System Architecture
-
-- **Runtime entrypoint**: `bin/insighta.js` loads `dist/index.js`.
-- **Command layer**: `src/index.ts` defines commands with `commander`.
-- **Auth flow**: `src/auth.ts` runs GitHub OAuth PKCE for CLI login.
-- **API client**: `src/api.ts` sends authenticated requests and handles refresh.
-- **Credential storage**: `src/storage.ts` reads/writes local credential files.
-- **Terminal UX**: `src/ui.ts` renders loaders (`ora`) and structured tables (`table`).
-
-## Authentication Flow
-
-`insighta login` performs a full OAuth PKCE login optimized for CLI usage:
-
-1. Generate `state`, `code_verifier`, and `code_challenge` (`S256`).
-2. Start a temporary local callback server at `http://127.0.0.1:<port>/callback`.
-3. Fetch GitHub OAuth client config from backend: `GET /auth/github/init`.
-4. Open browser to GitHub authorize URL with PKCE and state.
-5. Capture callback (`code`, `state`) on the local server.
-6. Validate returned state against generated state.
-7. Exchange code via backend: `POST /auth/github/exchange`.
-8. Persist returned tokens + user metadata locally.
-
-## CLI Usage
-
-### Install globally
+## Install And Build
 
 ```bash
 npm install
@@ -42,33 +58,72 @@ npm run build
 npm link
 ```
 
-After install, this works from any directory:
+After linking, the command can be run from any directory:
 
 ```bash
 insighta login
 ```
 
-### Auth Commands
+## Command Reference
+
+| Area | Command | Notes |
+| --- | --- | --- |
+| Auth | `insighta login` | Starts browser-based GitHub OAuth with local callback server |
+| Auth | `insighta logout` | Revokes refresh token and removes local credentials |
+| Auth | `insighta whoami` | Calls `GET /auth/me` and shows user table |
+| Profiles | `insighta profiles list [filters]` | Structured filter/sort/pagination query |
+| Profiles | `insighta profiles get <id>` | Fetch one profile by id |
+| Profiles | `insighta profiles search "<natural language>"` | Natural-language parser search |
+| Profiles | `insighta profiles create --name "<name>"` | Admin-only create operation |
+| Profiles | `insighta profiles export --format csv [filters]` | Writes CSV to current working directory |
+
+## Authentication Flow (CLI)
+
+`insighta login` performs a full PKCE login optimized for CLI usage:
+
+1. Generate a local `state`, `code_verifier`, and `code_challenge` (`S256`).
+2. Start temporary callback server on `http://<host>:<port><path>`.
+3. Fetch GitHub client metadata from backend via `GET /auth/github/init`.
+4. Open browser to GitHub authorize URL using local callback URL + PKCE values.
+5. Capture `code` and `state` on callback.
+6. Validate callback `state` against local generated state.
+7. Exchange `code + code_verifier + redirect_uri` through `POST /auth/github/exchange`.
+8. Persist tokens and user metadata into local credentials file.
+
+## Natural Language Parsing Approach
+
+`insighta profiles search "..."` calls `GET /api/profiles/search?q=...`.
+The parser is deterministic and rule-based on the backend. It supports:
+
+- gender words: male/man/men and female/woman/women
+- age-group words: child, teenager, adult, senior, elderly
+- young shortcut: maps to age range 16 to 24
+- numeric age bounds:
+  - above, over, older than, greater than `<n>`
+  - below, under, younger than, less than `<n>`
+- country phrase: `from <country name>` (must match known country names in stored profile data)
+
+### Search Examples (CLI)
+
+| CLI Query | Interpreted Filters | CLI Command |
+| --- | --- | --- |
+| young males from nigeria | `gender=male`, `min_age=16`, `max_age=24`, `country_id=NG` | `insighta profiles search "young males from nigeria"` |
+| women above 30 | `gender=female`, `min_age=30` | `insighta profiles search "women above 30"` |
+| teenage men from kenya | `gender=male`, `age_group=teenager`, `country_id=KE` | `insighta profiles search "teenage men from kenya"` |
+| seniors under 70 | `age_group=senior`, `max_age=70` | `insighta profiles search "seniors under 70"` |
+| adults from canada | `age_group=adult`, `country_id=CA` | `insighta profiles search "adults from canada"` |
+
+When the parser cannot interpret a query, the backend returns `400 Unable to interpret query` and the CLI prints the error.
+
+## Filtered List And Export Examples
 
 ```bash
-insighta login
-insighta logout
-insighta whoami
-```
-
-### Profile Commands
-
-```bash
-insighta profiles list
 insighta profiles list --gender male
 insighta profiles list --country NG --age-group adult
 insighta profiles list --min-age 25 --max-age 40
 insighta profiles list --sort-by age --order desc
 insighta profiles list --page 2 --limit 20
 
-insighta profiles get <id>
-insighta profiles search "young males from nigeria"
-insighta profiles create --name "Harriet Tubman"
 insighta profiles export --format csv
 insighta profiles export --format csv --gender male --country NG
 ```
@@ -76,160 +131,34 @@ insighta profiles export --format csv --gender male --country NG
 ## Token Handling Approach
 
 - Credentials are stored at `~/.insighta/credentials.json`.
-- Every protected request includes:
+- Protected requests include:
   - `Authorization: Bearer <access_token>`
   - `X-API-Version: 1`
-- Before each request, access token expiry is checked.
-- If access token is expired but refresh token is still valid:
-  - CLI calls `POST /auth/refresh`
-  - Stores the rotated access/refresh token pair.
-- If refresh is expired or refresh fails:
-  - CLI prompts re-authentication: `Session expired. Please run: insighta login`.
+- Access token expiry is checked before each protected request.
+- If access token is expired and refresh token is valid, CLI calls `POST /auth/refresh` and stores rotated tokens.
+- If refresh has expired or refresh fails, CLI asks the user to log in again.
 
 ## Role Enforcement Logic
 
-Authorization is enforced by the backend; CLI surfaces errors clearly.
+Backend enforces authorization. CLI surfaces backend errors directly.
 
-- **admin + analyst**:
-  - `profiles list`
-  - `profiles get`
-  - `profiles search`
-  - `profiles export`
-- **admin only**:
-  - `profiles create`
+- Admin and analyst: list, get, search, export
+- Admin only: create
 
-If a role does not have access, backend returns an error (e.g. `403`), and CLI prints it as:
+## Environment Variables
 
-```text
-Error: <backend message>
-```
+| Variable | Default | Used For |
+| --- | --- | --- |
+| `INSIGHTA_API_BASE_URL` | `http://localhost:3021` | Backend base URL |
+| `INSIGHTA_CALLBACK_PORT` | `8787` | Local callback server port |
+| `INSIGHTA_CALLBACK_HOST` | `localhost` | Local callback server host |
+| `INSIGHTA_CALLBACK_PATH` | `/callback` | Local callback route path |
 
-## Verification (Demo Checklist + Exact Example Outputs)
+## Frontend Placeholder
 
-Run the following during review:
+This README includes room for the upcoming frontend repository. Once created, add:
 
-### 1) Global command works from any directory
-
-```bash
-insighta --help
-```
-
-Expected output:
-
-```text
-Usage: insighta [options] [command]
-
-Insighta Labs CLI
-
-Options:
-  -V, --version    output the version number
-  -h, --help       display help for command
-
-Commands:
-  login [options]  Authenticate with GitHub OAuth
-  logout           Revoke session and clear local credentials
-  whoami           Show current authenticated user
-  profiles         Profile operations
-  help [command]   display help for command
-```
-
-### 2) Login flow
-
-```bash
-insighta login
-```
-
-Expected output pattern:
-
-```text
-- Starting OAuth login flow...
-✔ Starting OAuth login flow...
-Logged in as <github-username>
-Credentials saved to <home>/.insighta/credentials.json
-```
-
-### 3) Who am I (table output)
-
-```bash
-insighta whoami
-```
-
-Expected output structure:
-
-```text
-+------------+---------------------------+
-| Field      | Value                     |
-+------------+---------------------------+
-| ID         | <uuid>                    |
-| Username   | <github-username>         |
-| GitHub ID  | <github-id>               |
-| Email      | <email-or->               |
-| Role       | analyst                   |
-| Active     | true                      |
-| Last Login | <iso-date>                |
-+------------+---------------------------+
-```
-
-### 4) List profiles (loader + table + pagination summary)
-
-```bash
-insighta profiles list --gender male --country NG --page 1 --limit 5
-```
-
-Expected output pattern:
-
-```text
-- Fetching profiles...
-✔ Fetching profiles...
-+--------------------------------------+----------------+--------+-----+----------+----------------------+----------+-----------+---------------------+
-| ID                                   | Name           | Gender | Age | Age Group| Country              | Gender P | Country P | Created             |
-+--------------------------------------+----------------+--------+-----+----------+----------------------+----------+-----------+---------------------+
-| <uuid>                               | <name>         | male   | 34  | adult    | Nigeria (NG)         | 0.99     | 0.98      | <local datetime>    |
-+--------------------------------------+----------------+--------+-----+----------+----------------------+----------+-----------+---------------------+
-page=1 limit=5 total=<n> total_pages=<m>
-```
-
-### 5) Export CSV to current working directory
-
-```bash
-insighta profiles export --format csv --gender male --country NG
-```
-
-Expected output pattern:
-
-```text
-- Exporting profiles...
-✔ Exporting profiles...
-CSV exported to <current-working-directory>/profiles_<timestamp>.csv
-```
-
-### 6) Token expiry handling
-
-Wait until access token expires, then run:
-
-```bash
-insighta profiles list
-```
-
-Expected behavior:
-
-- Request succeeds after automatic refresh (no manual action needed), or
-- If refresh token is no longer valid:
-
-```text
-Error: Session expired. Please run: insighta login
-```
-
-### 7) Clear error messaging
-
-If not logged in and calling a protected endpoint:
-
-```bash
-insighta profiles list
-```
-
-Expected output:
-
-```text
-Error: You are not logged in. Run: insighta login
-```
+- repository URL
+- deployment URL
+- UI-specific auth/profile usage docs
+- end-to-end flow covering CLI, backend, and frontend
