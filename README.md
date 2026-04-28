@@ -154,6 +154,13 @@ Backend enforces authorization. CLI surfaces backend errors directly.
 | `INSIGHTA_CALLBACK_HOST` | `localhost` | Local callback server host |
 | `INSIGHTA_CALLBACK_PATH` | `/callback` | Local callback route path |
 
+## Branch And PR Policy
+
+- Branch from `main` using concise prefixes such as `feat/`, `fix/`, `docs/`, or `chore/`.
+- Keep PRs small and scoped to one feature or fix path.
+- Merge only after CI checks pass (`lint`, `test`, `build`).
+- Prefer squash merges with conventional commit-style summaries.
+
 ## Frontend Placeholder
 
 The frontend is the browser counterpart to this CLI and now has a live deployment.
