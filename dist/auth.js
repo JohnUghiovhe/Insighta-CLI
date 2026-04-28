@@ -8,9 +8,22 @@ const node_http_1 = require("node:http");
 const node_crypto_1 = __importDefault(require("node:crypto"));
 const axios_1 = __importDefault(require("axios"));
 const ui_1 = require("./ui");
+const DEFAULT_LOGIN_TIMEOUT_MS = 120000;
+const getLoginTimeoutMs = () => {
+    const raw = process.env.INSIGHTA_LOGIN_TIMEOUT_MS?.trim();
+    if (!raw) {
+        return DEFAULT_LOGIN_TIMEOUT_MS;
+    }
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed) || parsed < 1000) {
+        return DEFAULT_LOGIN_TIMEOUT_MS;
+    }
+    return parsed;
+};
 const sha256Base64Url = (value) => node_crypto_1.default.createHash("sha256").update(value).digest("base64url");
 const randomToken = () => node_crypto_1.default.randomBytes(32).toString("base64url");
 const runLoginFlow = async ({ baseUrl, callbackPort }) => {
+    const loginTimeoutMs = getLoginTimeoutMs();
     const state = randomToken();
     const codeVerifier = randomToken();
     const codeChallenge = sha256Base64Url(codeVerifier);
@@ -43,7 +56,7 @@ const runLoginFlow = async ({ baseUrl, callbackPort }) => {
             setTimeout(() => {
                 reject(new Error("Login timeout. Please try again."));
                 server.close();
-            }, 120000);
+            }, loginTimeoutMs);
         });
         const initResponse = await axios_1.default.get(`${baseUrl}/auth/github/init`);
         const authorizeUrl = new URL("https://github.com/login/oauth/authorize");

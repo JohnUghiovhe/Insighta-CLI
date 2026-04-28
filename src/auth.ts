@@ -69,7 +69,7 @@ export const runLoginFlow = async ({ baseUrl, callbackPort }: LoginFlowOptions):
       setTimeout(() => {
         reject(new Error("Login timeout. Please try again."));
         server.close();
-      }, 120000);
+      }, 120000); // 120 seconds timeout
     });
 
     const initResponse = await axios.get<{ status: "success"; client_id: string; scope: string }>(`${baseUrl}/auth/github/init`);
