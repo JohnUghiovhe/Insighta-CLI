@@ -1,13 +1,10 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.printError = exports.printPaginationSummary = exports.printProfiles = exports.printUser = exports.withSpinner = void 0;
-const ora_1 = __importDefault(require("ora"));
 const table_1 = require("table");
 const withSpinner = async (text, fn) => {
-    const spinner = (0, ora_1.default)(text).start();
+    const { default: ora } = await import("ora");
+    const spinner = ora(text).start();
     try {
         const result = await fn();
         spinner.succeed();

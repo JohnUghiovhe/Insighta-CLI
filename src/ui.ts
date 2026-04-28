@@ -1,8 +1,8 @@
-import ora from "ora";
 import { table } from "table";
 import { Profile, User } from "./types";
 
 export const withSpinner = async <T>(text: string, fn: () => Promise<T>): Promise<T> => {
+  const { default: ora } = await import("ora");
   const spinner = ora(text).start();
   try {
     const result = await fn();

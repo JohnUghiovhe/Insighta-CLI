@@ -32,7 +32,7 @@ describe("storage", () => {
   });
 
   it("saves and reads credentials from ~/.insighta/credentials.json", async () => {
-    const storage = await import("./storage");
+    const storage = await import("./storage.js");
 
     await storage.saveCredentials({
       base_url: "http://localhost:3021",
@@ -59,7 +59,7 @@ describe("storage", () => {
   });
 
   it("clears saved credentials", async () => {
-    const storage = await import("./storage");
+    const storage = await import("./storage.js");
 
     await storage.saveCredentials({
       base_url: "http://localhost:3021",
