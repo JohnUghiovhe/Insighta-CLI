@@ -7,7 +7,6 @@ exports.runLoginFlow = void 0;
 const node_http_1 = require("node:http");
 const node_crypto_1 = __importDefault(require("node:crypto"));
 const axios_1 = __importDefault(require("axios"));
-const open_1 = __importDefault(require("open"));
 const ui_1 = require("./ui");
 const sha256Base64Url = (value) => node_crypto_1.default.createHash("sha256").update(value).digest("base64url");
 const randomToken = () => node_crypto_1.default.randomBytes(32).toString("base64url");
@@ -55,7 +54,8 @@ const runLoginFlow = async ({ baseUrl, callbackPort }) => {
         authorizeUrl.searchParams.set("code_challenge", codeChallenge);
         authorizeUrl.searchParams.set("code_challenge_method", "S256");
         console.log(`OAuth callback URL: ${callbackUrl}`);
-        await (0, open_1.default)(authorizeUrl.toString());
+        const { default: open } = await import("open");
+        await open(authorizeUrl.toString());
         const callbackPayload = await codeAndStatePromise;
         if (callbackPayload.state !== state) {
             throw new Error("State mismatch. Login aborted.");

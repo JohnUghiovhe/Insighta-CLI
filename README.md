@@ -9,14 +9,14 @@ Use this table to jump across the full docs for each Insighta project.
 | Project | Purpose | Docs |
 | --- | --- | --- |
 | Insighta CLI (this repo) | Terminal client for auth, profile search, export, and admin actions | [CLI README](https://github.com/JohnUghiovhe/Insighta-CLI#readme) |
-| Insighta+ Labs Backend | API, auth, RBAC, natural-language parser, profile intelligence | [Backend README](https://github.com/JohnUghiovhe/insighta-backend#readme) |
+| Insighta Labs Backend | API, auth, RBAC, natural-language parser, profile intelligence | [Backend README](https://github.com/JohnUghiovhe/insighta-backend#readme) |
 | Insighta Web Frontend | Browser UI for auth and profile intelligence workflows | [Frontend README](https://github.com/JohnUghiovhe/insighta-web#readme) |
 
 ## Live URLs
 
 | Surface | URL | Status |
 | --- | --- | --- |
-| Frontend | Pending deployment URL | To be updated |
+| Frontend | https://insighta-web-pied.vercel.app/ | Live |
 | Backend Base | https://intelligence-query-engine-production.up.railway.app/ | Live |
 | Backend Health | https://intelligence-query-engine-production.up.railway.app/health | Live |
 
@@ -156,9 +156,18 @@ Backend enforces authorization. CLI surfaces backend errors directly.
 
 ## Frontend Placeholder
 
-This README includes room for the upcoming frontend repository. Once created, add:
+The frontend is the browser counterpart to this CLI and now has a live deployment.
 
-- repository URL
-- deployment URL
-- UI-specific auth/profile usage docs
-- end-to-end flow covering CLI, backend, and frontend
+### Frontend Links
+
+| Item | URL |
+| --- | --- |
+| Frontend Repo | https://github.com/JohnUghiovhe/insighta-web |
+| Frontend Live App | https://insighta-web-pied.vercel.app/ |
+
+### End-To-End Flow
+
+- CLI login starts PKCE in the terminal and completes the OAuth exchange through the shared backend.
+- Browser login uses the same backend auth system and keeps the web session aligned with CLI-issued account state.
+- Both clients read from the same profile intelligence APIs, so search and profile results remain consistent.
+- Backend token rotation and role checks remain the final source of truth when either client fails, times out, or loses session state.
