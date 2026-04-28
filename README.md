@@ -161,7 +161,7 @@ Backend enforces authorization. CLI surfaces backend errors directly.
 - Merge only after CI checks pass (`lint`, `test`, `build`).
 - Prefer squash merges with conventional commit-style summaries.
 
-## Frontend Placeholder
+## Frontend 
 
 The frontend is the browser counterpart to this CLI and now has a live deployment.
 
