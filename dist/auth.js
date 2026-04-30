@@ -3,13 +3,37 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.runLoginFlow = void 0;
+exports.runBootstrapLoginFlow = exports.runLoginFlow = void 0;
 const node_http_1 = require("node:http");
 const node_crypto_1 = __importDefault(require("node:crypto"));
 const axios_1 = __importDefault(require("axios"));
 const ui_1 = require("./ui");
 const sha256Base64Url = (value) => node_crypto_1.default.createHash("sha256").update(value).digest("base64url");
 const randomToken = () => node_crypto_1.default.randomBytes(32).toString("base64url");
+const getTestCode = (role) => (role === "analyst" ? "test_code_analyst" : "test_code");
+const startTestCodeLogin = async (baseUrl, role) => {
+    const callbackUrl = "http://localhost:8787/callback";
+    const testCode = getTestCode(role);
+    return (0, ui_1.withSpinner)("Starting local bootstrap session...", async () => {
+        const initResponse = await fetch(`${baseUrl}/auth/github?callback_url=${encodeURIComponent(callbackUrl)}`, {
+            method: "GET",
+            redirect: "manual"
+        });
+        const location = initResponse.headers.get("location") ?? undefined;
+        if (!location) {
+            throw new Error("Failed to start bootstrap login flow.");
+        }
+        const state = new URL(location).searchParams.get("state");
+        if (!state) {
+            throw new Error("Failed to read OAuth state for bootstrap login.");
+        }
+        const tokenResponse = await fetch(`${baseUrl}/auth/github/callback?code=${encodeURIComponent(testCode)}&state=${encodeURIComponent(state)}`);
+        if (!tokenResponse.ok) {
+            throw new Error(`Bootstrap login failed with status ${tokenResponse.status}`);
+        }
+        return (await tokenResponse.json());
+    });
+};
 const runLoginFlow = async ({ baseUrl, callbackPort }) => {
     const state = randomToken();
     const codeVerifier = randomToken();
@@ -69,3 +93,5 @@ const runLoginFlow = async ({ baseUrl, callbackPort }) => {
     });
 };
 exports.runLoginFlow = runLoginFlow;
+const runBootstrapLoginFlow = async ({ baseUrl, role = "analyst" }) => startTestCodeLogin(baseUrl, role);
+exports.runBootstrapLoginFlow = runBootstrapLoginFlow;

@@ -1,9 +1,10 @@
 import "dotenv/config";
 import { Command } from "commander";
 import { InsightaApi } from "./api";
-import { runLoginFlow } from "./auth";
+import { runBootstrapLoginFlow, runLoginFlow } from "./auth";
 import { getCredentialsPath } from "./storage";
 import { printError, printPaginationSummary, printProfiles, printUser, withSpinner } from "./ui";
+import type { Role } from "./types";
 
 const DEFAULT_BASE_URL = process.env.INSIGHTA_API_BASE_URL || "http://localhost:3021";
 const DEFAULT_CALLBACK_PORT = Number(process.env.INSIGHTA_CALLBACK_PORT || 8787);
@@ -115,6 +116,23 @@ profiles
         printProfiles(response.data);
         printPaginationSummary(response.page, response.limit, response.total, response.total_pages);
       })
+  );
+
+program
+  .command("bootstrap")
+  .alias("demo-login")
+  .description("Create a local demo session without browser OAuth")
+  .option("--base-url <url>", "Backend URL", DEFAULT_BASE_URL)
+  .option("--role <role>", "Bootstrap role: analyst|admin", "analyst")
+  .action((options: { baseUrl: string; role: Role }) =>
+    run(async () => {
+      const role = options.role === "admin" ? "admin" : "analyst";
+      const result = await runBootstrapLoginFlow({ baseUrl: options.baseUrl, role });
+      await api.loginWithCallbackPayload(options.baseUrl, result);
+      console.log(`Bootstrapped as ${result.data.username}`);
+      console.log(`Role: ${result.data.role}`);
+      console.log(`Credentials saved to ${getCredentialsPath()}`);
+    })
   );
 
 profiles

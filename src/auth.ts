@@ -2,10 +2,16 @@ import { createServer } from "node:http";
 import crypto from "node:crypto";
 import axios from "axios";
 import { withSpinner } from "./ui";
+import type { Role } from "./types";
 
 interface LoginFlowOptions {
   baseUrl: string;
   callbackPort: number;
+}
+
+interface BootstrapLoginOptions {
+  baseUrl: string;
+  role?: Role;
 }
 
 interface LoginResult {
@@ -31,6 +37,36 @@ const sha256Base64Url = (value: string): string =>
   crypto.createHash("sha256").update(value).digest("base64url");
 
 const randomToken = (): string => crypto.randomBytes(32).toString("base64url");
+const getTestCode = (role: Role): string => (role === "analyst" ? "test_code_analyst" : "test_code");
+
+const startTestCodeLogin = async (baseUrl: string, role: Role): Promise<LoginResult> => {
+  const callbackUrl = "http://localhost:8787/callback";
+  const testCode = getTestCode(role);
+
+  return withSpinner("Starting local bootstrap session...", async () => {
+    const initResponse = await fetch(`${baseUrl}/auth/github?callback_url=${encodeURIComponent(callbackUrl)}`, {
+      method: "GET",
+      redirect: "manual"
+    });
+
+    const location = initResponse.headers.get("location") ?? undefined;
+    if (!location) {
+      throw new Error("Failed to start bootstrap login flow.");
+    }
+
+    const state = new URL(location).searchParams.get("state");
+    if (!state) {
+      throw new Error("Failed to read OAuth state for bootstrap login.");
+    }
+
+    const tokenResponse = await fetch(`${baseUrl}/auth/github/callback?code=${encodeURIComponent(testCode)}&state=${encodeURIComponent(state)}`);
+    if (!tokenResponse.ok) {
+      throw new Error(`Bootstrap login failed with status ${tokenResponse.status}`);
+    }
+
+    return (await tokenResponse.json()) as LoginResult;
+  });
+};
 
 export const runLoginFlow = async ({ baseUrl, callbackPort }: LoginFlowOptions): Promise<LoginResult> => {
   const state = randomToken();
@@ -99,3 +135,6 @@ export const runLoginFlow = async ({ baseUrl, callbackPort }: LoginFlowOptions):
     return tokenResponse.data;
   });
 };
+
+export const runBootstrapLoginFlow = async ({ baseUrl, role = "analyst" }: BootstrapLoginOptions): Promise<LoginResult> =>
+  startTestCodeLogin(baseUrl, role);

@@ -89,6 +89,20 @@ profiles
     (0, ui_1.printProfiles)(response.data);
     (0, ui_1.printPaginationSummary)(response.page, response.limit, response.total, response.total_pages);
 }));
+program
+    .command("bootstrap")
+    .alias("demo-login")
+    .description("Create a local demo session without browser OAuth")
+    .option("--base-url <url>", "Backend URL", DEFAULT_BASE_URL)
+    .option("--role <role>", "Bootstrap role: analyst|admin", "analyst")
+    .action((options) => run(async () => {
+    const role = options.role === "admin" ? "admin" : "analyst";
+    const result = await (0, auth_1.runBootstrapLoginFlow)({ baseUrl: options.baseUrl, role });
+    await api.loginWithCallbackPayload(options.baseUrl, result);
+    console.log(`Bootstrapped as ${result.data.username}`);
+    console.log(`Role: ${result.data.role}`);
+    console.log(`Credentials saved to ${(0, storage_1.getCredentialsPath)()}`);
+}));
 profiles
     .command("get")
     .argument("<id>", "Profile ID")

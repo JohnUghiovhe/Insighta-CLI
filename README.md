@@ -50,6 +50,17 @@ insighta whoami
 insighta profiles list --limit 3
 ```
 
+### Local Bootstrap Login
+
+Use this when you want to seed your local CLI session without opening the browser OAuth flow.
+
+```bash
+insighta bootstrap
+insighta bootstrap --role admin
+```
+
+`insighta bootstrap` defaults to `analyst` and only updates the local credentials file at `~/.insighta/credentials.json`.
+
 ## Install And Build
 
 ```bash
