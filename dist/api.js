@@ -7,6 +7,8 @@ exports.InsightaApi = void 0;
 const axios_1 = __importDefault(require("axios"));
 const promises_1 = require("node:fs/promises");
 const node_path_1 = __importDefault(require("node:path"));
+const node_fs_1 = __importDefault(require("node:fs"));
+const form_data_1 = __importDefault(require("form-data"));
 const storage_1 = require("./storage");
 const API_VERSION = "1";
 const expiryDateFromNow = (seconds) => new Date(Date.now() + seconds * 1000).toISOString();
@@ -163,6 +165,35 @@ class InsightaApi {
             const targetPath = node_path_1.default.resolve(process.cwd(), filename);
             await (0, promises_1.writeFile)(targetPath, response.data, "utf8");
             return targetPath;
+        }
+        catch (error) {
+            throw new Error(extractErrorMessage(error));
+        }
+    }
+    async uploadProfiles(filePath) {
+        await this.refreshIfNeeded();
+        if (!this.credentials)
+            throw new Error("You are not logged in. Run: insighta login");
+        if (!node_fs_1.default.existsSync(filePath))
+            throw new Error(`File not found: ${filePath}`);
+        const form = new form_data_1.default();
+        form.append("file", node_fs_1.default.createReadStream(filePath));
+        try {
+            const headers = {
+                ...form.getHeaders(),
+                Authorization: `Bearer ${this.credentials.access_token}`,
+                "X-API-Version": API_VERSION
+            };
+            const response = await this.client.request({
+                method: "POST",
+                url: "/api/profiles/upload",
+                data: form,
+                headers,
+                maxBodyLength: Infinity,
+                maxContentLength: Infinity,
+                timeout: 0
+            });
+            return response.data;
         }
         catch (error) {
             throw new Error(extractErrorMessage(error));

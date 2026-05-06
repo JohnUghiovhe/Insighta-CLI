@@ -157,4 +157,13 @@ profiles
     const filePath = await (0, ui_1.withSpinner)("Exporting profiles...", async () => api.exportProfiles("csv", params));
     console.log(`CSV exported to ${filePath}`);
 }));
+profiles
+    .command("upload")
+    .description("Upload a CSV file of profiles")
+    .requiredOption("--file <path>", "Path to CSV file to upload")
+    .action((options) => run(async () => {
+    await api.loadCredentials();
+    const result = await (0, ui_1.withSpinner)("Uploading CSV...", async () => api.uploadProfiles(options.file));
+    console.log("Upload summary:", result);
+}));
 program.parseAsync(process.argv);
