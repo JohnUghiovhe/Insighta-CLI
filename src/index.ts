@@ -212,4 +212,16 @@ profiles
       })
   );
 
+profiles
+  .command("upload")
+  .description("Upload a CSV file of profiles")
+  .requiredOption("--file <path>", "Path to CSV file to upload")
+  .action((options: { file: string }) =>
+    run(async () => {
+      await api.loadCredentials();
+      const result = await withSpinner("Uploading CSV...", async () => api.uploadProfiles(options.file));
+      console.log("Upload summary:", result);
+    })
+  );
+
 program.parseAsync(process.argv);

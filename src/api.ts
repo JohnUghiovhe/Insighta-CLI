@@ -1,6 +1,8 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
+import fs from "node:fs";
+import FormData from "form-data";
 import { clearCredentials, readCredentials, saveCredentials } from "./storage";
 import { Credentials, ListResponse, Profile, SingleProfileResponse, User } from "./types";
 
@@ -198,6 +200,38 @@ export class InsightaApi {
       const targetPath = path.resolve(process.cwd(), filename);
       await writeFile(targetPath, response.data, "utf8");
       return targetPath;
+    } catch (error) {
+      throw new Error(extractErrorMessage(error));
+    }
+  }
+
+  async uploadProfiles(filePath: string): Promise<{ status: string; total_rows: number; inserted: number; skipped: number; reasons: Record<string, number> }> {
+    await this.refreshIfNeeded();
+    if (!this.credentials) throw new Error("You are not logged in. Run: insighta login");
+
+    if (!fs.existsSync(filePath)) throw new Error(`File not found: ${filePath}`);
+
+    const form = new FormData();
+    form.append("file", fs.createReadStream(filePath));
+
+    try {
+      const headers = {
+        ...form.getHeaders(),
+        Authorization: `Bearer ${this.credentials.access_token}`,
+        "X-API-Version": API_VERSION
+      } as Record<string, string>;
+
+      const response = await this.client.request({
+        method: "POST",
+        url: "/api/profiles/upload",
+        data: form,
+        headers,
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity,
+        timeout: 0
+      });
+
+      return response.data;
     } catch (error) {
       throw new Error(extractErrorMessage(error));
     }
