@@ -136,5 +136,16 @@ export const runLoginFlow = async ({ baseUrl, callbackPort }: LoginFlowOptions):
   });
 };
 
-export const runBootstrapLoginFlow = async ({ baseUrl, role = "analyst" }: BootstrapLoginOptions): Promise<LoginResult> =>
-  startTestCodeLogin(baseUrl, role);
+export const runBootstrapLoginFlow = async ({ baseUrl, role = "admin" }: BootstrapLoginOptions): Promise<LoginResult> => {
+  try {
+    return await startTestCodeLogin(baseUrl, role);
+  } catch (err: any) {
+    // If test-code bootstrap is not allowed by the server (403) or fails,
+    // fall back to the normal OAuth login flow which opens a browser.
+    if (err instanceof Error && /403|Bootstrap login failed/.test(err.message)) {
+      console.warn("Test-code bootstrap unavailable; falling back to interactive OAuth flow.");
+    }
+    // Use default callback port 8787 for the interactive flow
+    return runLoginFlow({ baseUrl, callbackPort: Number(process.env.INSIGHTA_CALLBACK_PORT || 8787) });
+  }
+};
