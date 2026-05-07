@@ -94,7 +94,7 @@ program
     .alias("demo-login")
     .description("Create a local demo session without browser OAuth")
     .option("--base-url <url>", "Backend URL", DEFAULT_BASE_URL)
-    .option("--role <role>", "Bootstrap role: analyst|admin", "analyst")
+    .option("--role <role>", "Bootstrap role: analyst|admin", "admin")
     .action((options) => run(async () => {
     const role = options.role === "admin" ? "admin" : "analyst";
     const result = await (0, auth_1.runBootstrapLoginFlow)({ baseUrl: options.baseUrl, role });
