@@ -163,7 +163,13 @@ profiles
     .requiredOption("--file <path>", "Path to CSV file to upload")
     .action((options) => run(async () => {
     await api.loadCredentials();
+    const start = Date.now();
     const result = await (0, ui_1.withSpinner)("Uploading CSV...", async () => api.uploadProfiles(options.file));
+    const elapsedMs = Date.now() - start;
+    const elapsedSeconds = elapsedMs / 1000;
+    const rowsPerSecond = elapsedSeconds > 0 ? Math.round(result.total_rows / elapsedSeconds) : 0;
     console.log("Upload summary:", result);
+    console.log(`Elapsed time: ${elapsedSeconds.toFixed(2)}s`);
+    console.log(`Throughput: ${rowsPerSecond.toLocaleString()} rows/sec`);
 }));
 program.parseAsync(process.argv);
