@@ -8,8 +8,8 @@
     "insighta": "./bin/insighta.js"
   },
   "scripts": {
-    "build": "tsc",
-    "dev": "tsx src/index.ts",
+    "build": "node api.js && tsc",
+    "dev": "node api.js && tsx src/index.ts",
     "lint": "tsc --noEmit",
     "prepare": "npm run build",
     "test": "vitest run"
