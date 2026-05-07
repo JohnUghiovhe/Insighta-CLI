@@ -219,8 +219,14 @@ profiles
   .action((options: { file: string }) =>
     run(async () => {
       await api.loadCredentials();
+      const start = Date.now();
       const result = await withSpinner("Uploading CSV...", async () => api.uploadProfiles(options.file));
+      const elapsedMs = Date.now() - start;
+      const elapsedSeconds = elapsedMs / 1000;
+      const rowsPerSecond = elapsedSeconds > 0 ? Math.round(result.total_rows / elapsedSeconds) : 0;
       console.log("Upload summary:", result);
+      console.log(`Elapsed time: ${elapsedSeconds.toFixed(2)}s`);
+      console.log(`Throughput: ${rowsPerSecond.toLocaleString()} rows/sec`);
     })
   );
 

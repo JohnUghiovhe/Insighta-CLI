@@ -2,7 +2,6 @@ import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from "axios";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import fs from "node:fs";
-import FormData from "form-data";
 import { clearCredentials, readCredentials, saveCredentials } from "./storage";
 import { Credentials, ListResponse, Profile, SingleProfileResponse, User } from "./types";
 
@@ -210,13 +209,11 @@ export class InsightaApi {
     if (!this.credentials) throw new Error("You are not logged in. Run: insighta login");
 
     if (!fs.existsSync(filePath)) throw new Error(`File not found: ${filePath}`);
-
-    const form = new FormData();
-    form.append("file", fs.createReadStream(filePath));
+    const stream = fs.createReadStream(filePath);
 
     try {
       const headers = {
-        ...form.getHeaders(),
+        "Content-Type": "text/csv",
         Authorization: `Bearer ${this.credentials.access_token}`,
         "X-API-Version": API_VERSION
       } as Record<string, string>;
@@ -224,7 +221,7 @@ export class InsightaApi {
       const response = await this.client.request({
         method: "POST",
         url: "/api/profiles/upload",
-        data: form,
+        data: stream,
         headers,
         maxBodyLength: Infinity,
         maxContentLength: Infinity,

@@ -8,7 +8,6 @@ const axios_1 = __importDefault(require("axios"));
 const promises_1 = require("node:fs/promises");
 const node_path_1 = __importDefault(require("node:path"));
 const node_fs_1 = __importDefault(require("node:fs"));
-const form_data_1 = __importDefault(require("form-data"));
 const storage_1 = require("./storage");
 const API_VERSION = "1";
 const expiryDateFromNow = (seconds) => new Date(Date.now() + seconds * 1000).toISOString();
@@ -176,18 +175,17 @@ class InsightaApi {
             throw new Error("You are not logged in. Run: insighta login");
         if (!node_fs_1.default.existsSync(filePath))
             throw new Error(`File not found: ${filePath}`);
-        const form = new form_data_1.default();
-        form.append("file", node_fs_1.default.createReadStream(filePath));
+        const stream = node_fs_1.default.createReadStream(filePath);
         try {
             const headers = {
-                ...form.getHeaders(),
+                "Content-Type": "text/csv",
                 Authorization: `Bearer ${this.credentials.access_token}`,
                 "X-API-Version": API_VERSION
             };
             const response = await this.client.request({
                 method: "POST",
                 url: "/api/profiles/upload",
-                data: form,
+                data: stream,
                 headers,
                 maxBodyLength: Infinity,
                 maxContentLength: Infinity,
