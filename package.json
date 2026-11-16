@@ -7,6 +7,10 @@
   "bin": {
     "insighta": "./bin/insighta.js"
   },
+  "files": [
+    "bin",
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
